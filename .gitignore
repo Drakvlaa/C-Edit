@@ -1,2 +1,4 @@
 /.vscode
-.*.bat
+*.bat
+*.exe
+*.o
