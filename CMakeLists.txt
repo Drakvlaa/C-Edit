@@ -3,4 +3,7 @@ project(CEdit)
 
 set(CMAKE_CXX_STANDARD 20)
 
-add_executable(CEdit src/main.cpp)
+add_executable(CEdit src/main.cpp
+        src/environment.hpp
+        src/file.hpp
+        src/core.hpp)

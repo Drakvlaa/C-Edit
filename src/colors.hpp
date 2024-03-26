@@ -1,3 +1,6 @@
+#ifndef COLORS_HPP_INCLUDED
+#define COLORS_HPP_INCLUDED
+
 #define BLACK "\033[30m"
 #define RED "\033[31m"
 #define GREEN "\033[32m"
@@ -21,3 +24,4 @@
 #define POSITIVE "\033[27m"
 #define RESET "\033[0m"
 
+#endif

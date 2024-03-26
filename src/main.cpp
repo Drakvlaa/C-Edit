@@ -9,13 +9,9 @@
 #include <vector>
 
 #include "colors.hpp"
+#include "core.hpp"
+#include "file.hpp"
 
-#define COMMAND_DIR "./commands/"
-
-namespace fs = std::filesystem;
-
-std::vector<std::string> commands;
-fs::path commands_dir = fs::absolute(COMMAND_DIR);
 
 const char* concat(const std::string& a, const std::string& b) {
   return (a + b).c_str();
@@ -28,59 +24,6 @@ std::vector<fs::directory_entry> get_command_files() {
     directories.push_back(entry);
   }
   return directories;
-}
-
-std::string get_env(HKEY hRegistryKey, const std::string& path = "Path") {
-  
-  BYTE buffer[1024 * 1024];
-  DWORD buffsz1 = sizeof(buffer);
-  
-  RegQueryValueExA(hRegistryKey, path.c_str(), nullptr, nullptr, buffer, std::addressof(buffsz1));
-  std::string result = reinterpret_cast<const char*>(buffer);
-  return result;
-}
-
-void set_env(HKEY hRegistryKey, const std::string& name, const std::string& value) {
-  // check is hRegistryKey nullptr
-  long code = RegSetValueExA(
-    hRegistryKey,
-    name.c_str(),
-    0,
-    REG_EXPAND_SZ,
-    LPBYTE(value.c_str()),
-    (value.size() + 1) * sizeof(wchar_t)
-  );
-
-  if (code != ERROR_SUCCESS) {
-    fprintf(stderr, "Failed to set environment variable | Code %ld", code);
-    RegCloseKey(hRegistryKey);
-    exit(EXIT_FAILURE);
-  }
-}
-
-void append_path(const std::string& to_append, const std::string& key = "Path") {
-  // read
-  HKEY read_key;
-  RegOpenKeyEx(HKEY_CURRENT_USER, "Environment", 0, KEY_READ, &read_key);
-  const std::string value = get_env(read_key, key);
-  std::cout << "< " << value << '\n';
-  RegCloseKey(read_key);
-  // write
-  HKEY write_key;
-  RegOpenKeyEx(HKEY_CURRENT_USER, "Environment", 0, KEY_ALL_ACCESS, &write_key);
-  const std::string written = value + ";" + to_append;
-  std::cout << "> " << written << '\n';
-  set_env(write_key, key, written);
-  RegCloseKey(write_key);
-}
-
-void save_file(const std::string &filename, FILE *file, const std::string &content) {
-  fputs(content.c_str(), file);
-  fclose(file);
-  std::cout << "File saved!" << std::endl;
-  append_path(commands_dir.string());
-  std::cout << "Appended to path: " << commands_dir << '\n';
-  commands.push_back(filename);
 }
 
 void show_files() {
@@ -101,7 +44,7 @@ void create_command() {
 
   const char* path = concat(COMMAND_DIR, concat(filename, ".bat"));
   std::cout << path << '\n';
-  FILE *file = fopen(path, "w");
+  FILE *file = std::fopen(path, "w");
   if (!file) {
     fprintf(stderr, RED "Cannot open file!\n" RESET);
     return;
