@@ -11,10 +11,22 @@
 
 #include "colors.hpp"
 
+#define COMMAND_DIR "./commands/"
+
+namespace fs = std::filesystem;
+
 std::vector<std::string> commands;
+fs::path commands_dir = fs::absolute(COMMAND_DIR);
 
 const char* concat(const std::string& a, const std::string& b) {
   return (a + b).c_str();
+}
+
+void get_command_files() {
+  std::string path = commands_dir.string();
+  for (const auto& entry : fs::directory_iterator(path)) {
+    std::cout << entry.path() << std::endl;
+  }
 }
 
 std::string get_env(HKEY hRegistryKey, const std::string& path = "Path") {
@@ -66,13 +78,13 @@ void save_file(const std::string &filename, FILE *file, const std::string &conte
   fputs(content.c_str(), file);
   fclose(file);
   std::cout << "File saved!" << std::endl;
-  std::filesystem::path abs_path = std::filesystem::absolute(filename);
-  append_path(abs_path.string());
-  std::cout << "Appended to path: " << abs_path << '\n';
+  append_path(commands_dir.string());
+  std::cout << "Appended to path: " << commands_dir << '\n';
   commands.push_back(filename);
 }
 
 void show_files() {
+  get_command_files();
   std::cout << BLUE "Your commands (" << commands.size() << ")"
             << ": " << RESET << std::endl;
   size_t i = 1;
@@ -87,9 +99,11 @@ void create_command() {
   std::string filename;
   getline(std::cin, filename);
 
-  FILE *file = fopen(concat(filename, ".bat"), "w");
+  const char* path = concat(COMMAND_DIR, concat(filename, ".bat"));
+  std::cout << path << '\n';
+  FILE *file = fopen(path, "w");
   if (!file) {
-    fprintf(stderr, RED "Cannot open file!" RESET);
+    fprintf(stderr, RED "Cannot open file!\n" RESET);
     return;
   }
   std::cout << MAGENTA "File editor mode" RESET << std::endl;
