@@ -1,12 +1,11 @@
-#include <stdio.h>
-#include <string.h>
+#include <cstdio>
+#include <cstring>
 #include <sys/types.h>
 #include <windows.h>
 
 #include <filesystem>
 #include <fstream>
 #include <iostream>
-#include <sstream>
 #include <vector>
 
 #include "colors.hpp"
@@ -22,11 +21,13 @@ const char* concat(const std::string& a, const std::string& b) {
   return (a + b).c_str();
 }
 
-void get_command_files() {
-  std::string path = commands_dir.string();
+std::vector<fs::directory_entry> get_command_files() {
+  const std::string path = commands_dir.string();
+  std::vector<fs::directory_entry> directories;
   for (const auto& entry : fs::directory_iterator(path)) {
-    std::cout << entry.path() << std::endl;
+    directories.push_back(entry);
   }
+  return directories;
 }
 
 std::string get_env(HKEY hRegistryKey, const std::string& path = "Path") {
@@ -46,10 +47,10 @@ void set_env(HKEY hRegistryKey, const std::string& name, const std::string& valu
     name.c_str(),
     0,
     REG_EXPAND_SZ,
-    (LPBYTE) value.c_str(),
+    LPBYTE(value.c_str()),
     (value.size() + 1) * sizeof(wchar_t)
   );
-  
+
   if (code != ERROR_SUCCESS) {
     fprintf(stderr, "Failed to set environment variable | Code %ld", code);
     RegCloseKey(hRegistryKey);
@@ -58,17 +59,16 @@ void set_env(HKEY hRegistryKey, const std::string& name, const std::string& valu
 }
 
 void append_path(const std::string& to_append, const std::string& key = "Path") {
-  std::string value;
   // read
   HKEY read_key;
   RegOpenKeyEx(HKEY_CURRENT_USER, "Environment", 0, KEY_READ, &read_key);
-  value = get_env(read_key, key);
+  const std::string value = get_env(read_key, key);
   std::cout << "< " << value << '\n';
   RegCloseKey(read_key);
   // write
   HKEY write_key;
   RegOpenKeyEx(HKEY_CURRENT_USER, "Environment", 0, KEY_ALL_ACCESS, &write_key);
-  std::string written = value + ";" + to_append;
+  const std::string written = value + ";" + to_append;
   std::cout << "> " << written << '\n';
   set_env(write_key, key, written);
   RegCloseKey(write_key);
@@ -88,7 +88,7 @@ void show_files() {
   std::cout << BLUE "Your commands (" << commands.size() << ")"
             << ": " << RESET << std::endl;
   size_t i = 1;
-  for (std::string com : commands) {
+  for (const std::string& com : commands) {
     std::cout << YELLOW << i++ << "." << com << RESET << std::endl;
   }
 }
@@ -124,7 +124,7 @@ void create_command() {
 
     // append to file
     line += '\n';
-    for (char c : line) {
+    for (const char c : line) {
       if ((c < 126 && c >= 32) || c == 10) {
         content += c;
       }
